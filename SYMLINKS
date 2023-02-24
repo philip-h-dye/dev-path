@@ -1,0 +1,7 @@
+./log : ../log/dev-path
+./s : dev_path
+./x : scripts
+./scripts/test-dev-path : actual/test-dev-path.py
+./t/import.py : ../tests/test_import.py
+./t/p.py : ../s/p.py
+./t/scenarios.py : ../tests/test_scenarios.py.skip

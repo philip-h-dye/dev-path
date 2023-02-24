@@ -1,0 +1,36 @@
+#
+# echo "- ./.alias - start"
+
+module_base=$( /bin/pwd )
+
+module=$( echo $PWD | sed -e 's/^.*\///;s/-/_/g' )
+
+#
+
+alias req=' logts -b log/requirements python -m pip install -r requirements.txt --user '
+
+alias c='( clear && invoke clean )'
+
+alias ext='( n=ext  && clear && logts -b log/$n invoke build_$n )'
+
+alias b='( n=build  && clear && logts -b log/$n invoke $n )'
+
+alias t='( n=test   && clear && logts -b log/$n invoke $n )'
+
+alias re='( c && b && t )'
+
+#
+
+alias w='( n=wheel  && clear && logts -b log/$n invoke $n )'
+
+alias report-install-path=' echo "install path = $( which-module ${module} )" '
+
+alias inst='(n=install&&clear&& logts -b log/$n invoke $n && report-install-path )'
+
+alias re-inst='( c && inst ; report-install-path )'
+
+# provides 'test-dev'
+source ./scripts/test-dev-function.sh
+#
+
+# echo "- ./.alias - done"

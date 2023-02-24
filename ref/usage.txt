@@ -1,0 +1,28 @@
+Move* to a specified active development path via pushd.
+  * actually generates shell commands to do such
+
+Usage:  dev [options] <pattern>
+        dev [options] append <path>
+        dev [options] insert <path>
+        dev [options] set <pattern> <path>
+        dev [options] delete <pattern>
+
+Move, via pushd, to the first development path matching <pattern>.
+
+Alternatively, if an action is specified, perform it instead.
+
+DEV_PATHS is typically '~/.dev-paths' but this may be controlled
+by setting DEV_PATHS to an alternate file name.
+
+Management Actions :
+  append        Append <path> to the end of DEV_PATHS.
+  insert        Insert <path> at the start of DEV_PATHS.
+  set           Replace first path matching <pattern> with
+                <path> or report error if not found.
+
+Options :
+  -h, --help    Show this usage message.
+  --version     Show version and exit.
+
+Future :
+  -N            Go to the Nth matching path.
