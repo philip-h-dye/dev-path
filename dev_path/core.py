@@ -157,7 +157,6 @@ def main ( argv = sys.argv ) :
 def append(cfg):  # path
     with open(DEV_PATHS, 'a') as out_f :
         print(cfg.val.path, file=out_f)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
@@ -169,7 +168,6 @@ def insert(cfg):  # path
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(outf_f.name, DEV_PATHS)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
@@ -185,7 +183,6 @@ def delete(cfg):  # string
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
@@ -202,7 +199,6 @@ def _set(cfg):	  # string path
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
