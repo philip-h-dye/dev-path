@@ -18,17 +18,16 @@ Usage:  dev-path [options] <string>
 
   With '--glob', <string> may be a shell glob pattern.
 
-  If an action is specified, do not move change directories, perform
-  the specified action.
+  If an action is specified, do not change directories, perform
+  the specified action.  <path> is always converted to an absolute
+  path with '~' expansion if applicable.  If --force isn't specified,
+  it is an error to specify a non-existent path.
 
   DEV_PATHS is typically '~/.dev-paths' but this may be controlled
   by setting DEV_PATHS to an alternate file name.
 
   Comments, blanklines and whitespace are ignored.  Comments start
   with '#' and they may be full lines or trailing.
-
-  All added/inserted/set paths are converted to an absolute path
-  if the provided <path> is relative.
 
 DEV_PATHS Management Actions :
   -a, --append  Append <path> to the end of the file.
@@ -39,6 +38,7 @@ DEV_PATHS Management Actions :
                 or report error if <string> is not found.
 
 Options :
+  -f, --force   Apply action regardless of whether <path> exists
   -r, --regex   <string> is a python regular expression.
   -g, --glob    <string> is a shell glob patttern.
   -h, --help    Show this usage message.
@@ -138,9 +138,9 @@ def main ( argv = sys.argv ) :
 
     # Recast <path> operand as Path() and ensure that it is absolute
     if cfg.val.path is not None :
-        cfg.val.path = Path(cfg.val.path)
-        if not cfg.val.path.is_absolute() :
-            cfg.val.path = cfg.val.path.resolve()
+        cfg.val.path = Path(cfg.val.path).resolve()
+        if not cfg.val.path.exists() and not cfg.force: 
+            raise ValueError(f"<path> does not exist: '{cfg.val.path}'")
 
     if cfg.opt.append or cfg.opt.add :
         return append(cfg)
@@ -178,6 +178,8 @@ def delete(cfg):  # string
     with tempfile.NamedTemporaryFile('w') as out_f :
         with open(DEV_PATHS, 'r') as in_f :
             if not copy_until_match(m, in_f, out_f):
+                if cfg.opt.force:
+                    return 0
                 print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
                       f"any path in '{DEV_PATHS}'.", file=sys.stderr)
                 raise SystemExit
