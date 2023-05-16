@@ -140,24 +140,22 @@ def main ( argv = sys.argv ) :
             cfg.val.path = cfg.val.path.resolve()
 
     if cfg.opt.append or cfg.opt.add :
-        append(cfg)
+        return append(cfg)
     if cfg.opt.insert or cfg.opt.wedge :
-        insert(cfg)
+        return insert(cfg)
     if cfg.opt.delete or cfg.opt.remove :
-        delete(cfg)
+        return delete(cfg)
     if cfg.opt.set or cfg.opt.assign :
-        _set(cfg)
+        return _set(cfg)
 
-    pushd (cfg)
-
-    sys.exit(0)
+    return pushd (cfg)
 
 #------------------------------------------------------------------------------
 
 def append(cfg):  # path
     with open(DEV_PATHS, 'a') as out_f :
         print(cfg.val.path, file=out_f)
-    sys.exit(0)
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -168,7 +166,7 @@ def insert(cfg):  # path
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(outf_f.name, DEV_PATHS)
-    sys.exit(0)
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -179,11 +177,11 @@ def delete(cfg):  # string
             if not copy_until_match(m, in_f, out_f):
                 print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
                       f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-                sys.exit(1)
+                raise SystemExit
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    sys.exit(0)
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -194,12 +192,12 @@ def _set(cfg):	  # string path
             if not copy_until_match(m, in_f, out_f):
                 print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
                       f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-                sys.exit(1)
+                raise SystemExit
             print(cfg.val.path, file=out_f)
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    sys.exit(0)
+    return 0
 
 #------------------------------------------------------------------------------
 
@@ -233,11 +231,11 @@ def pushd ( cfg ) :
             if m.has_pattern(candidate):
                 print(f"pushd {shlex.quote(candidate)}")
                 print(f"if [ -r .alias ] ; then source .alias ; fi")
-                sys.exit(0)
+                return 0
 
     print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
           f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-    sys.exit(1)
+    raise SystemExit
 
 #------------------------------------------------------------------------------
 
@@ -380,6 +378,8 @@ class {name} ({bases_string}):
     exec(code, globals())
 
 # ------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
+
 #------------------------------------------------------------------------------
