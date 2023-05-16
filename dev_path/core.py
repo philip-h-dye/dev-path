@@ -5,12 +5,12 @@
 Move to a specified active development path via pushd.
   * actually generates shell commands to do such
 
-Usage:  dev [options] <string>
-        dev [options] [ -a <path> | -i <path> | -d <string> | -s <string> <path> ]
-        dev [options] [ --append | append | add ] <path>
-        dev [options] [ --insert | insert | wedge ] <path>
-        dev [options] [ --delete | delete | remove ] <string>
-        dev [options] [ --set    | set    | assign ] <string> <path>
+Usage:  dev-path [options] <string>
+        dev-path [options] [ -a <path> | -i <path> | -d <string> | -s <string> <path> ]
+        dev-path [options] [ --append | append | add ] <path>
+        dev-path [options] [ --insert | insert | wedge ] <path>
+        dev-path [options] [ --delete | delete | remove ] <string>
+        dev-path [options] [ --set    | set    | assign ] <string> <path>
 
   Move, via pushd, to the first development path containing <string>.
 
