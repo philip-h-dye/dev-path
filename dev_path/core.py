@@ -43,7 +43,10 @@ Options :
   -g, --glob    <string> is a shell glob patttern.
   -h, --help    Show this usage message.
   --version     Show version and exit.
-  --debug       Show internal handling such as parsed arguments.
+  --debug       Show internal handlingy
+  --debug-argv  Show arguments exactly as received by main()
+  --debug-args  Show arguments after being parsed by docopt().
+  --debug-attr  Show arguments after being converted to attributes.
 
 Future :
 
@@ -113,7 +116,7 @@ except:
 
 def main ( argv = sys.argv ) :
 
-    if '--debug' in argv:
+    if '--debug-argv' in argv:
         print("# [ main : argv ]")
         hash_pp(argv)
         print('')
@@ -121,15 +124,15 @@ def main ( argv = sys.argv ) :
     args = docopt(__doc__, argv=argv[1:], options_first=True,
                   version=__version__ )
 
-    if args['--debug']:
-        print("# [ args : docopt ]")
+    if args['--debug-args']:
+        print("# [ args : after docopt() ]")
         hash_pp(args)
         print('')
 
     cfg = fields ( args )
 
-    if args['--debug']:
-        print("# [ args : fields ]")
+    if args['--debug-attr']:
+        print("# [ args : options and arguments as attributes ]")
         hash_pp(cfg)
         print('')
 
