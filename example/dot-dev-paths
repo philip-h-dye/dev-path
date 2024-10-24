@@ -1,0 +1,50 @@
+/home/phdyex/src/python/parsers/docopt-parser/docopt-parser
+#
+#------------------------------------------------------------------------------
+
+# simple example and printargs development
+~/src/ffi/simple
+
+#------------------------------------------------------------------------------
+
+/home/phdye/src/python.cygwin/c-api/borrowed-vs-owned
+# Ran into an issue with how I understood cffi/ctypes to work.  It seems
+# some aspects (i.e. CDDL(None), PyDLL(N), dlopen(None)) don't work quite as
+# automagically under Windows as common examples from Linux.
+# See dynload below -- especially ../dynload/t/{ctypes,cffi}/py-getversion.py
+
+#------------------------------------------------------------------------------
+
+/home/phdye/src/python.cygwin/c-api/dynload
+/home/phdye/src/python.cygwin/c-api/dynload/t/ctypes
+/home/phdye/src/python.cygwin/c-api/dynload/t/cffi
+# dynload works but is unnecessary as I sorted out the calling aspects.
+# See ../dynload/t/{ctypes,cffi}/py-getversion.py
+# Of minor interest, ../dynload/t/cffi/b.py-getversion.py
+
+#------------------------------------------------------------------------------
+
+~phdye/src/python.common/logtool
+
+/build/cygwin/coreutils
+# git checkout v8.15 -- last version in which /bin/su present
+# /bin/su was moved to util-linux but there it requires PAM
+
+#------------------------------------------------------------------------------
+
+/home/phdye/src/commands/dlocate
+
+#------------------------------------------------------------------------------
+
+/home/phdyex/src/python/optstruct
+#
+/home/phdyex/src/python/optstruct/grammar
+#
+/home/phdyex/src/python/parsers/parsimonious/mini  # updating to 3.x
+
+#------------------------------------------------------------------------------
+
+/home/phdyex/src/command/dotdotsym
+/home/phdyex/src/command/cleaner
+
+#------------------------------------------------------------------------------

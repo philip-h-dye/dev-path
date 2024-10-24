@@ -21,8 +21,10 @@ Usage:  dev [options] <string>
 
   With '--glob', <string> may be a shell glob pattern.
 
-  If an action is specified, do not move change directories, perform
-  the specified action.
+  If an action is specified, do not change directories, perform
+  the specified action.  <path> is always converted to an absolute
+  path with '~' expansion if applicable.  If --force isn't specified,
+  it is an error to specify a non-existent path.
 
   DEV_PATHS is typically '~/.dev-paths' but this may be controlled
   by setting DEV_PATHS to an alternate file name.
@@ -44,11 +46,15 @@ Path Actions :
     --assign     <path> or report error if not found.
 
 Options :
+  -f, --force   Apply action regardless of whether <path> exists
   -r, --regex   <string> is a python regular expression.
   -g, --glob    <string> is a shell glob patttern.
   -h, --help    Show this usage message.
   --version     Show version and exit.
-  --debug       Show internal handling such as parsed arguments.
+  --debug       Show internal handlingy
+  --debug-argv  Show arguments exactly as received by main()
+  --debug-args  Show arguments after being parsed by docopt().
+  --debug-attr  Show arguments after being converted to attributes.
 
 Future :
 
@@ -115,7 +121,7 @@ except:
 
 def main ( argv = sys.argv ) :
 
-    if '--debug' in argv:
+    if '--debug-argv' in argv:
         print("# [ main : argv ]")
         hash_pp(argv)
         print('')
@@ -123,30 +129,30 @@ def main ( argv = sys.argv ) :
     args = docopt(__doc__, argv=argv[1:], options_first=True,
                   version=__version__ )
 
-    if args['--debug']:
-        print("# [ args : docopt ]")
+    if args['--debug-args']:
+        print("# [ args : after docopt() ]")
         hash_pp(args)
         print('')
 
     cfg = fields ( args )
 
-    if args['--debug']:
-        print("# [ args : fields ]")
+    if args['--debug-attr']:
+        print("# [ args : options and arguments as attributes ]")
         hash_pp(cfg)
         print('')
 
     # Recast <path> operand as Path() and ensure that it is absolute
     if cfg.val.path is not None :
-        cfg.val.path = Path(cfg.val.path)
-        if not cfg.val.path.is_absolute() :
-            cfg.val.path = cfg.val.path.resolve()
+        cfg.val.path = Path(cfg.val.path).resolve()
+        if not cfg.val.path.exists() and not cfg.force: 
+            raise ValueError(f"<path> does not exist: '{cfg.val.path}'")
 
     if args['--debug']:
         print("# [ args : fields ]")
         hash_pp(cfg)
         print('')
 
-    # Each command exits, there is not fall through
+    # Each command exits, there is no fall through
     
     if cfg.opt.display:
         display(cfg)
@@ -242,9 +248,11 @@ def delete(cfg):  # string
     with tempfile.NamedTemporaryFile('w') as out_f :
         with open(DEV_PATHS, 'r') as in_f :
             if not copy_until_match(m, in_f, out_f):
+                if cfg.opt.force:
+                    return 0
                 print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
                       f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-                sys.exit(1)
+                raise SystemExit
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
@@ -259,7 +267,7 @@ def assign(cfg):	  # string path
             if not copy_until_match(m, in_f, out_f):
                 print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
                       f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-                sys.exit(1)
+                raise SystemExit
             print(cfg.val.path, file=out_f)
             out_f.write( in_f.read() )
         out_f.flush()
@@ -282,11 +290,11 @@ def pushd(cfg):
             if m.has_pattern(candidate):
                 print(f"pushd {shlex.quote(candidate)}")
                 print(f"if [ -r .alias ] ; then source .alias ; fi")
-                sys.exit(0)
+                return 0
 
     print(f"dev-path: {m.type_} '{cfg.val.string}' {m.verb}  "
           f"any path in '{DEV_PATHS}'.", file=sys.stderr)
-    sys.exit(1)
+    sys.exit(0)
 
 #------------------------------------------------------------------------------
 
