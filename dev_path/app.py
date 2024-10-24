@@ -8,12 +8,13 @@ Move to a specified active development path via pushd.  Or rather,
 it generates the shell command to do so.
 
 Usage:  dev [options] <string>
-        dev [options] (      --delete  | delete  | remove  ) <string>
+        dev [options] ( -d | --display | show    | list    ) <string>
         dev [options] ( -a | --append  | append  | add     ) <path>
         dev [options] ( -p | --prepend | first   | start   ) <path>
+        dev [options] ( -s | --set     | set     | assign  ) <string> <path>
         dev [options] (      --insert-before     | before  ) <string> <path>
         dev [options] (      --insert-after      | after   ) <string> <path>
-        dev [options] ( -s | --set     | set     | assign  ) <string> <path>
+        dev [options] (      --delete  | delete  | remove  ) <string>
 
   Move, via pushd, to the first development path containing <string>.
 
@@ -38,6 +39,7 @@ Usage:  dev [options] <string>
 Path Actions :
   -d, --display  Display matching paths, do not push
     --show       Alias for --display
+    --list       Alias for --display
   -a, --append   Append <path> to the end of the file.
   -i, --insert   Insert <path> at the start of the file.
   --delete       Delete the first path line matching <string>
@@ -351,6 +353,7 @@ def copy_until_match(m, in_f, out_f):
 #      FILE        => f.val.file
 
 opt_mapping = { "show"      : "display",
+                "list"      : "display",
                 "add"       : "append",
                 "first"     : "prepend",
                 "start"     : "prepend",
@@ -377,7 +380,7 @@ def fields(args):
             field = opt_mapping[field]
         # if field in options:
         #     raise ValueError(f"Options, resolved field name clash '{field}' -- please address")
-        if field not in options or not options[field]:
+        if field not in options or args[key]:
             options[field] = args[key]
 
     # Positional arguments: <name> , or name, or NAME
