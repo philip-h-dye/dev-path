@@ -1,3 +1,6 @@
 import sys
-from .core import main
-sys.exit(main(sys.argv))
+
+from .app import main
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

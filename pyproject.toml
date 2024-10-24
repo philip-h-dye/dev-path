@@ -1,0 +1,28 @@
+[project]
+name = "dev-path"
+version = "0.3.1"
+description = "Devevelopent path management"
+authors = [
+    { name = "Philip Dye", email = "phdye@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+homepage = "https://github.com/philip-h-dye/dev-path"
+
+dependencies = [
+    "docopt >= 0.6.2"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-runner"
+]
+
+[project.scripts]
+dev-path = "dev_path:main"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

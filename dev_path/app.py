@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 #------------------------------------------------------------------------------
 
-"""
-Move to a specified active development path via pushd.
-  * actually generates shell commands to do such
+from __future__ import print_function
+
+__doc__ = """
+Move to a specified active development path via pushd.  Or rather,
+it generates the shell command to do so.
 
 Usage:  dev [options] <string>
-        dev [options] [ -a <path> | -i <path> | -d <string> | -s <string> <path> ]
-        dev [options] [ --append | append | add ] <path>
-        dev [options] [ --insert | insert | wedge ] <path>
-        dev [options] [ --delete | delete | remove ] <string>
-        dev [options] [ --set    | set    | assign ] <string> <path>
+        dev [options] (      --delete  | delete  | remove  ) <string>
+        dev [options] ( -a | --append  | append  | add     ) <path>
+        dev [options] ( -p | --prepend | first   | start   ) <path>
+        dev [options] (      --insert-before     | before  ) <string> <path>
+        dev [options] (      --insert-after      | after   ) <string> <path>
+        dev [options] ( -s | --set     | set     | assign  ) <string> <path>
 
   Move, via pushd, to the first development path containing <string>.
 
@@ -30,13 +33,15 @@ Usage:  dev [options] <string>
   All added/inserted/set paths are converted to an absolute path
   if the provided <path> is relative.
 
-DEV_PATHS Management Actions :
-  -a, --append  Append <path> to the end of the file.
-  -i, --insert  Insert <path> at the start of the file.
-  -s, --set     Replace first path line matching <string> with
-                <path> or report error if not found.
-  -d, --delete  Delete the first path line matching <string>
-                or report error if <string> is not found.
+Path Actions :
+  -d, --display  Display matching paths, do not push
+    --show       Alias for --display
+  -a, --append   Append <path> to the end of the file.
+  -i, --insert   Insert <path> at the start of the file.
+  --delete       Delete the first path line matching <string>
+                 or report error if <string> is not found.
+  -s, --set      Replace first path line matching <string> with
+    --assign     <path> or report error if not found.
 
 Options :
   -r, --regex   <string> is a python regular expression.
@@ -61,11 +66,10 @@ Examples:
 
   [ 0 ] phdyex @ xps-ne ~
   $ function dev() {
-       eval "$( dev_path '$@' )" && \
-         if [ -r .alias ] ; then
-           source .alias
-         fi
+        eval "$( dev_path '$@' )"
+        if [ -r .alias ] ; then source .alias ; fi    
   }
+  # See dev_path/shell/dev-function.sh for a nuanced implementation.
 
   [ 0 ] phdyex @ xps-ne ~
   $ dev cygapi
@@ -80,8 +84,6 @@ Examples:
 
 Report bugs to <philip@phd-solutions.com>.
 """
-
-from __future__ import print_function
 
 import sys
 import os
@@ -105,7 +107,7 @@ from .p import hash_pp
 #------------------------------------------------------------------------------
 
 try :
-    DEV_PATHS = Path( os.environ['DEV_PATHS'] )
+    DEV_PATHS = Path( os.environ['DEV_PATHS'] ).expanduser()
 except:
     DEV_PATHS = Path('~', '.dev-paths').expanduser()
 
@@ -139,37 +141,98 @@ def main ( argv = sys.argv ) :
         if not cfg.val.path.is_absolute() :
             cfg.val.path = cfg.val.path.resolve()
 
-    if cfg.opt.append or cfg.opt.add :
+    if args['--debug']:
+        print("# [ args : fields ]")
+        hash_pp(cfg)
+        print('')
+
+    # Each command exits, there is not fall through
+    
+    if cfg.opt.display:
+        display(cfg)
+
+    if cfg.opt.append:
         append(cfg)
-    if cfg.opt.insert or cfg.opt.wedge :
-        insert(cfg)
-    if cfg.opt.delete or cfg.opt.remove :
+
+    if cfg.opt.prepend:
+        prepend(cfg)
+
+    if cfg.opt.insert_before:
+        insert_before(cfg)
+
+    if cfg.opt.insert_after:
+        insert_after(cfg)
+
+    if cfg.opt.delete:
         delete(cfg)
-    if cfg.opt.set or cfg.opt.assign :
-        _set(cfg)
 
-    pushd (cfg)
+    if cfg.opt.assign:
+        assign(cfg)
 
+    pushd(cfg)
+
+#------------------------------------------------------------------------------
+
+def display(cfg):  # path
+    m = matcher(cfg)
+    with open(DEV_PATHS, 'r') as in_f :
+        for line in in_f :
+            candidate = line.strip()
+            try :
+                candidate = candidate [ : candidate.index('#') ].strip()
+            except :
+                pass
+            if m.has_pattern(candidate):
+                print(candidate)
     sys.exit(0)
 
 #------------------------------------------------------------------------------
 
 def append(cfg):  # path
+    # print('# append() : [cfg]') ; hash_pp(cfg) ; print("# - - - - -\n")
     with open(DEV_PATHS, 'a') as out_f :
         print(cfg.val.path, file=out_f)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
 
-def insert(cfg):  # path
+def prepend(cfg):  # path
     with tempfile.NamedTemporaryFile('w') as out_f :
         print(cfg.val.path, file=out_f)
         with open(DEV_PATHS, 'r') as in_f :
             out_f.write( in_f.read() )
         out_f.flush()
-        shutil.copy(outf_f.name, DEV_PATHS)
-    print('echo > /dev/null')
+        shutil.copy(out_f.name, DEV_PATHS)
+    sys.exit(0)
+
+#------------------------------------------------------------------------------
+
+def insert_before(cfg):  # string
+    m = matcher(cfg)
+    with tempfile.NamedTemporaryFile('w') as out_f :
+        with open(DEV_PATHS, 'r') as in_f :
+            line = copy_until_match(m, in_f, out_f)
+            print(cfg.val.path, file=out_f)
+            if line:
+                out_f.write(line+'\n')
+                out_f.write( in_f.read() )
+        out_f.flush()
+        shutil.copy(out_f.name, DEV_PATHS)
+    sys.exit(0)
+
+#------------------------------------------------------------------------------
+
+def insert_after(cfg):  # string
+    m = matcher(cfg)
+    with tempfile.NamedTemporaryFile('w') as out_f :
+        with open(DEV_PATHS, 'r') as in_f :
+            if line := copy_until_match(m, in_f, out_f):
+                out_f.write(line+'\n')
+            print(cfg.val.path, file=out_f)
+            if line:
+                out_f.write( in_f.read() )
+        out_f.flush()
+        shutil.copy(out_f.name, DEV_PATHS)
     sys.exit(0)
 
 #------------------------------------------------------------------------------
@@ -185,12 +248,11 @@ def delete(cfg):  # string
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
 
-def _set(cfg):	  # string path
+def assign(cfg):	  # string path
     m = matcher(cfg)
     with tempfile.NamedTemporaryFile('w') as out_f :
         with open(DEV_PATHS, 'r') as in_f :
@@ -202,28 +264,11 @@ def _set(cfg):	  # string path
             out_f.write( in_f.read() )
         out_f.flush()
         shutil.copy(out_f.name, DEV_PATHS)
-    print('echo > /dev/null')
     sys.exit(0)
 
 #------------------------------------------------------------------------------
 
-def copy_until_match(m, in_f, out_f):
-
-    for line in in_f :
-        candidate = line.strip()
-        try :
-            candidate = candidate [ : candidate.index('#') ].strip()
-        except :
-            pass
-        if m.has_pattern(candidate):
-            return candidate
-        out_f.write(line)
-
-    return None
-
-#------------------------------------------------------------------------------
-
-def pushd ( cfg ) :
+def pushd(cfg):
 
     m = matcher(cfg)
 
@@ -232,7 +277,7 @@ def pushd ( cfg ) :
             candidate = line.strip()
             try :
                 candidate = candidate [ : candidate.index('#') ].strip()
-            except :
+            except Exception as _ :
                 pass
             if m.has_pattern(candidate):
                 print(f"pushd {shlex.quote(candidate)}")
@@ -246,6 +291,9 @@ def pushd ( cfg ) :
 #------------------------------------------------------------------------------
 
 def matcher(cfg):
+
+    # print("matcher(cfg): ", end='')
+    # hash_pp(cfg)
 
     if cfg.opt.regex:
         type_ = 'Regexp'
@@ -266,6 +314,22 @@ def matcher(cfg):
 
 #------------------------------------------------------------------------------
 
+def copy_until_match(m, in_f, out_f):
+
+    for line in in_f :
+        candidate = line.strip()
+        try :
+            candidate = candidate [ : candidate.index('#') ].strip()
+        except :
+            pass
+        if m.has_pattern(candidate):
+            return candidate
+        out_f.write(line)
+
+    return None
+
+#------------------------------------------------------------------------------
+
 # Options:  -<letter> or --<word>
 # Values:   '<'<word>'>' or plain word
 #
@@ -277,6 +341,15 @@ def matcher(cfg):
 #
 # i.e. --test-name => f.opt.test_name
 #      FILE        => f.val.file
+
+opt_mapping = { "show"      : "display",
+                "add"       : "append",
+                "first"     : "prepend",
+                "start"     : "prepend",
+                "before"    : "insert_before",
+                "after"     : "insert_after",
+                "set"       : "assign",
+              }
 
 def fields(args):
 
@@ -292,15 +365,18 @@ def fields(args):
         if field.startswith('-'):
             field = field[1:]
         field = field.replace('-','_')
-        if hasattr(options, field):
-            raise ValueError("Options, resolved field name clash '{field}' -- please address")
-        options[field] = args[key]
+        if field in opt_mapping:
+            field = opt_mapping[field]
+        # if field in options:
+        #     raise ValueError(f"Options, resolved field name clash '{field}' -- please address")
+        if field not in options or not options[field]:
+            options[field] = args[key]
 
     # Positional arguments: <name> , or name, or NAME
     def value ( key ):
         field = key.lower().strip('<>')
-        if hasattr(values, field):
-            raise ValueError("Values, resolved field name clash '{field}' -- please address")
+        if field in values:
+            raise ValueError(f"Values, resolved field name clash '{field}' -- please address")
         values[field] = args[key]
 
     for key in args:
@@ -309,17 +385,21 @@ def fields(args):
         else:
             value(key)
 
-    # print('[options]') ; pp(options) ; print("\n- - - - -\n")
+    # if args['--debug']:
+    #     print('[options]') ; pp(options) ; print("\n- - - - -\n")
     # Options = namedtuple('Options', ' '.join(options.keys()))
     create_dataclass('Options', ' '.join(options.keys()))
     opt = Options(*options.values())
-    # print('[options]') ; pp(opt) ; print("\n- - - - -\n")
+    # if args['--debug']:
+    #     print('[options]') ; pp(opt) ; print("\n- - - - -\n")
 
-    # print('[values]') ; pp(values) ; print("\n- - - - -\n")
+    # if args['--debug']:
+    #     print('[values]') ; pp(values) ; print("\n- - - - -\n")
     # Values = namedtuple('Values', ' '.join(values.keys()))
     create_dataclass('Values', ' '.join(values.keys()))
     val = Values(*values.values())
-    # print('[values]') ; pp(val) ; print("\n- - - - -\n")
+    # if args['--debug']:
+    #     print('[values]') ; pp(val) ; print("\n- - - - -\n")
 
     def Arguments_init ( self, opt, val ):
         self.opt = opt
@@ -349,6 +429,7 @@ def fields(args):
 
 # ------------------------------------------------------------------------------
 
+# NamedTuples cannot be modified.
 def create_dataclass(name, field_name_string, bases=(object,)):
 
     if not isinstance(bases, tuple):
@@ -383,7 +464,9 @@ class {name} ({bases_string}):
 
     exec(code, globals())
 
-# ------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
+
 #------------------------------------------------------------------------------
